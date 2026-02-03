@@ -20,7 +20,7 @@
         }
         
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             background-color: white;
             border-radius: 20px;
@@ -85,11 +85,13 @@
             color: #4a6fa5;
         }
         
+        /* 並排顯示旋律 */
         .melody-container {
             display: flex;
-            flex-direction: column;
-            gap: 30px;
+            justify-content: center;
+            gap: 40px;
             margin-bottom: 40px;
+            flex-wrap: wrap;
         }
         
         .melody-box {
@@ -98,6 +100,9 @@
             padding: 25px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
             border: 2px solid #e1e8f0;
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
         }
         
         .melody-title {
@@ -105,20 +110,21 @@
             color: #2c3e50;
             margin-bottom: 15px;
             text-align: center;
+            font-weight: bold;
         }
         
         .melody-line-container {
             background-color: white;
             border-radius: 10px;
             padding: 20px;
-            min-height: 150px;
+            min-height: 200px;
             position: relative;
             border: 1px solid #dde4ee;
         }
         
         .canvas-container {
             width: 100%;
-            height: 120px;
+            height: 150px;
             position: relative;
         }
         
@@ -137,20 +143,20 @@
         }
         
         .answer-btn {
-            padding: 15px 30px;
-            font-size: 1.2rem;
+            padding: 18px 35px;
+            font-size: 1.4rem;
             font-weight: bold;
             border: none;
-            border-radius: 12px;
+            border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
-            min-width: 150px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-width: 180px;
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
         }
         
         .answer-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
         }
         
         .answer-btn:active {
@@ -174,24 +180,32 @@
         
         .feedback {
             text-align: center;
-            padding: 15px;
-            border-radius: 10px;
+            padding: 20px;
+            border-radius: 15px;
             margin-top: 20px;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             font-weight: bold;
             display: none;
+            animation: popIn 0.5s ease;
+        }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
         }
         
         .correct {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background-color: #4CAF50;
+            color: white;
+            border: 3px solid #45a049;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.4);
         }
         
         .incorrect {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background-color: #F44336;
+            color: white;
+            border: 3px solid #d32f2f;
+            box-shadow: 0 0 20px rgba(244, 67, 54, 0.4);
         }
         
         .instructions {
@@ -248,18 +262,20 @@
             gap: 30px;
             margin-top: 20px;
             flex-wrap: wrap;
+            margin-bottom: 30px;
         }
         
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            font-size: 1.1rem;
         }
         
         .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
+            width: 25px;
+            height: 25px;
+            border-radius: 5px;
         }
         
         .legend-same {
@@ -274,6 +290,22 @@
             background-color: #F44336;
         }
         
+        .result-icons {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 20px;
+            font-size: 4rem;
+        }
+        
+        .correct-icon {
+            color: #4CAF50;
+        }
+        
+        .incorrect-icon {
+            color: #F44336;
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -283,6 +315,16 @@
                 font-size: 2rem;
             }
             
+            .melody-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .melody-box {
+                width: 100%;
+                min-width: unset;
+            }
+            
             .answer-options {
                 flex-direction: column;
                 align-items: center;
@@ -290,6 +332,8 @@
             
             .answer-btn {
                 width: 90%;
+                font-size: 1.3rem;
+                padding: 15px;
             }
             
             .game-info {
@@ -299,6 +343,12 @@
             
             .info-item {
                 min-width: 100%;
+            }
+            
+            .legend {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
             }
         }
     </style>
@@ -328,6 +378,22 @@
             </div>
         </div>
         
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color legend-same"></div>
+                <span>相同：線條完全一樣</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color legend-similar"></div>
+                <span>相似：大部分相同，有小差異</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color legend-different"></div>
+                <span>不同：完全不一樣</span>
+            </div>
+        </div>
+        
+        <!-- 並排顯示兩個旋律 -->
         <div class="melody-container">
             <div class="melody-box">
                 <div class="melody-title">旋律 A</div>
@@ -354,21 +420,9 @@
             <button class="answer-btn" id="different-btn">不同</button>
         </div>
         
-        <div class="feedback hidden" id="feedback"></div>
-        
-        <div class="legend">
-            <div class="legend-item">
-                <div class="legend-color legend-same"></div>
-                <span>相同：線條完全一樣</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color legend-similar"></div>
-                <span>相似：80%相同，有小差異</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color legend-different"></div>
-                <span>不同：完全不一樣</span>
-            </div>
+        <div class="feedback hidden" id="feedback">
+            <div id="feedback-text"></div>
+            <div class="result-icons" id="result-icons"></div>
         </div>
         
         <div class="game-controls">
@@ -380,10 +434,10 @@
         <div class="instructions">
             <h3>遊戲說明：</h3>
             <ul>
-                <li>觀察上方兩個旋律線條，比較它們的形狀</li>
+                <li>觀察上面兩個旋律線條，比較它們的形狀</li>
                 <li>判斷旋律A和旋律B是「相同」、「相似」還是「不同」</li>
                 <li><strong>相同</strong>：線條完全一樣（形狀、高度、方向都相同）</li>
-                <li><strong>相似</strong>：大部分一樣，但有1-2個點不同</li>
+                <li><strong>相似</strong>：大部分一樣，但有小差異</li>
                 <li><strong>不同</strong>：完全不一樣的線條形狀</li>
                 <li>答對得分，連續答對有額外加分！</li>
             </ul>
@@ -402,73 +456,87 @@
             gameActive: true
         };
         
-        // 旋律數據庫
+        // 旋律數據庫 - 簡化版，更適合小朋友
         const melodyDatabase = [
             // 初級關卡 - 簡單線條，明顯差異
             {
-                name: "相同線條",
+                name: "相同線條 - 小山丘",
                 type: "same",
                 difficulty: "easy",
-                melodyA: [0, 2, 4, 2, 0, -2, 0],
-                melodyB: [0, 2, 4, 2, 0, -2, 0]
+                melodyA: [0, 3, 6, 3, 0, -2, 0],
+                melodyB: [0, 3, 6, 3, 0, -2, 0]
             },
             {
-                name: "相似線條",
+                name: "相似線條 - 小山丘變形",
                 type: "similar",
                 difficulty: "easy",
-                melodyA: [0, 2, 4, 2, 0, -2, 0],
-                melodyB: [0, 2, 4, 3, 0, -2, 0] // 第四個點不同
+                melodyA: [0, 3, 6, 3, 0, -2, 0],
+                melodyB: [0, 3, 6, 4, 0, -2, 0] // 第四個點不同
             },
             {
-                name: "不同線條",
+                name: "不同線條 - 小山丘 vs 山谷",
                 type: "different",
                 difficulty: "easy",
-                melodyA: [0, 2, 4, 2, 0, -2, 0],
-                melodyB: [0, -2, -4, -2, 0, 2, 0] // 完全相反
+                melodyA: [0, 3, 6, 3, 0, -2, 0],
+                melodyB: [0, -3, -6, -3, 0, 2, 0] // 完全相反
             },
-            // 中級關卡 - 更多點，細微差異
             {
-                name: "相同線條",
+                name: "相同線條 - 波浪",
+                type: "same",
+                difficulty: "easy",
+                melodyA: [0, 4, 0, 4, 0, 4, 0],
+                melodyB: [0, 4, 0, 4, 0, 4, 0]
+            },
+            {
+                name: "相似線條 - 波浪變形",
+                type: "similar",
+                difficulty: "easy",
+                melodyA: [0, 4, 0, 4, 0, 4, 0],
+                melodyB: [0, 4, 0, 5, 0, 4, 0] // 第四個點不同
+            },
+            // 中級關卡
+            {
+                name: "相同線條 - 階梯",
                 type: "same",
                 difficulty: "medium",
-                melodyA: [0, 1, 3, 5, 3, 1, 0, -1, -3, -1, 0],
-                melodyB: [0, 1, 3, 5, 3, 1, 0, -1, -3, -1, 0]
+                melodyA: [0, 2, 4, 2, 4, 6, 4, 2, 0],
+                melodyB: [0, 2, 4, 2, 4, 6, 4, 2, 0]
             },
             {
-                name: "相似線條",
+                name: "相似線條 - 階梯變形",
                 type: "similar",
                 difficulty: "medium",
-                melodyA: [0, 1, 3, 5, 3, 1, 0, -1, -3, -1, 0],
-                melodyB: [0, 1, 3, 5, 4, 1, 0, -1, -3, -1, 0] // 第五個點不同
+                melodyA: [0, 2, 4, 2, 4, 6, 4, 2, 0],
+                melodyB: [0, 2, 4, 3, 4, 6, 4, 2, 0] // 第四個點不同
             },
             {
-                name: "不同線條",
+                name: "不同線條 - 階梯 vs 滑梯",
                 type: "different",
                 difficulty: "medium",
-                melodyA: [0, 1, 3, 5, 3, 1, 0, -1, -3, -1, 0],
-                melodyB: [0, -1, -3, -5, -3, -1, 0, 1, 3, 1, 0] // 鏡像對稱
+                melodyA: [0, 2, 4, 2, 4, 6, 4, 2, 0],
+                melodyB: [6, 5, 4, 3, 2, 1, 0, -1, -2] // 向下滑
             },
-            // 高級關卡 - 複雜線條
+            // 高級關卡
             {
-                name: "相同線條",
+                name: "相同線條 - 山峰",
                 type: "same",
                 difficulty: "hard",
-                melodyA: [0, 2, 1, 3, 2, 4, 1, 3, 0, 2, -1, 1, 0],
-                melodyB: [0, 2, 1, 3, 2, 4, 1, 3, 0, 2, -1, 1, 0]
+                melodyA: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0],
+                melodyB: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0]
             },
             {
-                name: "相似線條",
+                name: "相似線條 - 山峰變形",
                 type: "similar",
                 difficulty: "hard",
-                melodyA: [0, 2, 1, 3, 2, 4, 1, 3, 0, 2, -1, 1, 0],
-                melodyB: [0, 2, 1, 3, 2, 4, 2, 3, 0, 2, -1, 1, 0] // 第七個點不同
+                melodyA: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0],
+                melodyB: [0, 3, 5, 7, 6, 3, 0, -2, -4, -2, 0] // 第五個點不同
             },
             {
-                name: "不同線條",
+                name: "不同線條 - 山峰 vs 山谷",
                 type: "different",
                 difficulty: "hard",
-                melodyA: [0, 2, 1, 3, 2, 4, 1, 3, 0, 2, -1, 1, 0],
-                melodyB: [0, -2, -1, -3, -2, -4, -1, -3, 0, -2, 1, -1, 0] // 上下翻轉
+                melodyA: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0],
+                melodyB: [0, -3, -5, -7, -5, -3, 0, 2, 4, 2, 0] // 上下翻轉
             }
         ];
         
@@ -478,6 +546,8 @@
         const streakEl = document.getElementById('streak');
         const levelNameEl = document.getElementById('level-name');
         const feedbackEl = document.getElementById('feedback');
+        const feedbackText = document.getElementById('feedback-text');
+        const resultIcons = document.getElementById('result-icons');
         const sameBtn = document.getElementById('same-btn');
         const similarBtn = document.getElementById('similar-btn');
         const differentBtn = document.getElementById('different-btn');
@@ -559,6 +629,7 @@
             
             // 隱藏反饋
             feedbackEl.classList.add('hidden');
+            resultIcons.innerHTML = '';
             
             // 啟用答案按鈕
             sameBtn.disabled = false;
@@ -569,7 +640,7 @@
             levelEl.textContent = gameState.level;
         }
         
-        // 繪製旋律線條
+        // 繪製旋律線條 - 點加大
         function drawMelody(ctx, melodyPoints, color) {
             const width = ctx.canvas.width;
             const height = ctx.canvas.height;
@@ -591,7 +662,7 @@
             
             // 繪製線條
             ctx.beginPath();
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 4;
             ctx.strokeStyle = color;
             ctx.lineJoin = 'round';
             
@@ -607,20 +678,43 @@
                 } else {
                     ctx.lineTo(x, y);
                 }
-                
-                // 繪製點
-                ctx.fillStyle = color;
-                ctx.beginPath();
-                ctx.arc(x, y, 5, 0, Math.PI * 2);
-                ctx.fill();
             }
             
             ctx.stroke();
+            
+            // 繪製大點
+            for (let i = 0; i < pointCount; i++) {
+                const x = i * pointSpacing;
+                const normalizedY = (melodyPoints[i] - minVal) / range;
+                const y = height * 0.1 + normalizedY * (height * 0.8);
+                
+                // 大圓點
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, 10, 0, Math.PI * 2); // 點加大到10px
+                ctx.fill();
+                
+                // 點的外框
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x, y, 10, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // 顯示點編號（可選）
+                if (pointCount <= 9) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(i+1, x, y);
+                }
+            }
         }
         
         // 繪製背景格線
         function drawGrid(ctx, width, height) {
-            ctx.strokeStyle = '#e0e0e0';
+            ctx.strokeStyle = '#e8f0ff';
             ctx.lineWidth = 1;
             
             // 水平線
@@ -634,7 +728,7 @@
             }
             
             // 垂直線
-            const verticalLines = 10;
+            const verticalLines = 8;
             for (let i = 0; i <= verticalLines; i++) {
                 const x = (width / verticalLines) * i;
                 ctx.beginPath();
@@ -666,12 +760,18 @@
                     gameState.score += 5; // 額外加分
                 }
                 
-                feedbackEl.textContent = `正確！答案：${getAnswerText(gameState.correctAnswer)}`;
+                feedbackText.textContent = `✓ 正確！答案是：${getAnswerText(gameState.correctAnswer)}`;
                 feedbackEl.className = "feedback correct";
+                
+                // 顯示正確圖標
+                resultIcons.innerHTML = '<div class="correct-icon">✓✓✓</div>';
             } else {
                 gameState.streak = 0;
-                feedbackEl.textContent = `錯誤！正確答案是：${getAnswerText(gameState.correctAnswer)}`;
+                feedbackText.textContent = `✗ 錯誤！正確答案是：${getAnswerText(gameState.correctAnswer)}`;
                 feedbackEl.className = "feedback incorrect";
+                
+                // 顯示錯誤圖標
+                resultIcons.innerHTML = '<div class="incorrect-icon">✗✗✗</div>';
                 
                 // 高亮顯示正確答案
                 highlightCorrectAnswer();
@@ -684,6 +784,49 @@
             if (!isCorrect) {
                 showAnswerExplanation();
             }
+            
+            // 播放音效（可選）
+            playSoundEffect(isCorrect);
+        }
+        
+        // 播放音效
+        function playSoundEffect(isCorrect) {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                if (isCorrect) {
+                    // 正確音效 - 上升音階
+                    playTone(audioContext, 523.25, 0.1); // C5
+                    setTimeout(() => playTone(audioContext, 659.25, 0.1), 100); // E5
+                    setTimeout(() => playTone(audioContext, 783.99, 0.1), 200); // G5
+                } else {
+                    // 錯誤音效 - 下降音階
+                    playTone(audioContext, 783.99, 0.2); // G5
+                    setTimeout(() => playTone(audioContext, 659.25, 0.2), 200); // E5
+                    setTimeout(() => playTone(audioContext, 523.25, 0.2), 400); // C5
+                }
+            } catch (e) {
+                // 瀏覽器不支持音頻
+                console.log("音效無法播放");
+            }
+        }
+        
+        // 播放單音
+        function playTone(audioContext, frequency, duration) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
         }
         
         // 獲取答案的文字描述
@@ -715,9 +858,10 @@
         function showAnswerExplanation() {
             // 簡單的解釋
             const explanation = document.createElement('div');
-            explanation.style.marginTop = '10px';
-            explanation.style.fontSize = '0.9rem';
-            explanation.style.color = '#666';
+            explanation.style.marginTop = '15px';
+            explanation.style.fontSize = '1.1rem';
+            explanation.style.color = '#fff';
+            explanation.style.fontWeight = 'normal';
             
             let text = '';
             switch(gameState.currentMelody.type) {
@@ -733,7 +877,7 @@
             }
             
             explanation.textContent = text;
-            feedbackEl.appendChild(explanation);
+            feedbackText.appendChild(explanation);
         }
         
         // 顯示提示
@@ -765,9 +909,18 @@
             gameState.gameActive = false;
             
             // 顯示最終分數
-            feedbackEl.textContent = `遊戲結束！最終分數：${gameState.score}分`;
+            feedbackText.textContent = `遊戲結束！最終分數：${gameState.score}分`;
             feedbackEl.className = "feedback correct";
             feedbackEl.classList.remove('hidden');
+            
+            // 顯示祝賀圖標
+            if (gameState.score >= 80) {
+                resultIcons.innerHTML = '<div class="correct-icon">🎉🏆🎉</div>';
+            } else if (gameState.score >= 60) {
+                resultIcons.innerHTML = '<div class="correct-icon">👍😊👍</div>';
+            } else {
+                resultIcons.innerHTML = '<div class="correct-icon">💪👏💪</div>';
+            }
             
             // 禁用答案按鈕
             sameBtn.disabled = true;
@@ -776,13 +929,13 @@
             
             // 顯示祝賀訊息
             setTimeout(() => {
-                let message = "完成所有關卡！";
+                let message = "完成所有關卡！\n\n";
                 if (gameState.score >= 80) {
-                    message += " 優秀！你是旋律辨識大師！";
+                    message += "優秀！你是旋律辨識大師！";
                 } else if (gameState.score >= 60) {
-                    message += " 良好！繼續努力！";
+                    message += "良好！繼續努力！";
                 } else {
-                    message += " 多加練習會更好！";
+                    message += "多加練習會更好！";
                 }
                 
                 alert(message);
