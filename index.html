@@ -77,12 +77,10 @@
             color: #2c3e50;
         }
         
-        .level-indicator {
-            background-color: #e8f4fc;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            color: #4a6fa5;
+        .high-score {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 5px;
         }
         
         /* 並排顯示旋律 */
@@ -306,6 +304,14 @@
             color: #F44336;
         }
         
+        .difficulty-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4a6fa5;
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -362,21 +368,25 @@
         
         <div class="game-info">
             <div class="info-item">
-                <div class="info-label">關卡</div>
-                <div class="info-value"><span id="level">1</span>/10</div>
+                <div class="info-label">答題數量</div>
+                <div class="info-value"><span id="question-count">0</span></div>
             </div>
             <div class="info-item">
-                <div class="info-label">分數</div>
+                <div class="info-label">當前分數</div>
                 <div class="info-value"><span id="score">0</span></div>
+                <div class="high-score">最高分數: <span id="high-score">0</span></div>
             </div>
             <div class="info-item">
                 <div class="info-label">連續正確</div>
                 <div class="info-value"><span id="streak">0</span></div>
             </div>
             <div class="info-item">
-                <div class="level-indicator" id="level-name">初級關卡</div>
+                <div class="info-label">正確率</div>
+                <div class="info-value"><span id="accuracy">0</span>%</div>
             </div>
         </div>
+        
+        <div class="difficulty-indicator" id="difficulty-indicator">難度：簡單</div>
         
         <div class="legend">
             <div class="legend-item">
@@ -439,7 +449,8 @@
                 <li><strong>相同</strong>：線條完全一樣（形狀、高度、方向都相同）</li>
                 <li><strong>相似</strong>：大部分一樣，但有小差異</li>
                 <li><strong>不同</strong>：完全不一樣的線條形狀</li>
-                <li>答對得分，連續答對有額外加分！</li>
+                <li>遊戲沒有上限，可以一直玩下去！</li>
+                <li>系統會自動保存你的最高分數</li>
             </ul>
         </div>
     </div>
@@ -447,104 +458,162 @@
     <script>
         // 遊戲狀態
         const gameState = {
-            level: 1,
             score: 0,
             streak: 0,
-            totalQuestions: 10,
-            currentQuestion: 0,
+            totalQuestions: 0,
+            correctAnswers: 0,
             correctAnswer: null,
-            gameActive: true
+            gameActive: true,
+            difficulty: "easy", // 根據表現自動調整難度
+            highScore: 0
         };
         
-        // 旋律數據庫 - 簡化版，更適合小朋友
-        const melodyDatabase = [
-            // 初級關卡 - 簡單線條，明顯差異
-            {
-                name: "相同線條 - 小山丘",
-                type: "same",
-                difficulty: "easy",
-                melodyA: [0, 3, 6, 3, 0, -2, 0],
-                melodyB: [0, 3, 6, 3, 0, -2, 0]
-            },
-            {
-                name: "相似線條 - 小山丘變形",
-                type: "similar",
-                difficulty: "easy",
-                melodyA: [0, 3, 6, 3, 0, -2, 0],
-                melodyB: [0, 3, 6, 4, 0, -2, 0] // 第四個點不同
-            },
-            {
-                name: "不同線條 - 小山丘 vs 山谷",
-                type: "different",
-                difficulty: "easy",
-                melodyA: [0, 3, 6, 3, 0, -2, 0],
-                melodyB: [0, -3, -6, -3, 0, 2, 0] // 完全相反
-            },
-            {
-                name: "相同線條 - 波浪",
-                type: "same",
-                difficulty: "easy",
-                melodyA: [0, 4, 0, 4, 0, 4, 0],
-                melodyB: [0, 4, 0, 4, 0, 4, 0]
-            },
-            {
-                name: "相似線條 - 波浪變形",
-                type: "similar",
-                difficulty: "easy",
-                melodyA: [0, 4, 0, 4, 0, 4, 0],
-                melodyB: [0, 4, 0, 5, 0, 4, 0] // 第四個點不同
-            },
-            // 中級關卡
-            {
-                name: "相同線條 - 階梯",
-                type: "same",
-                difficulty: "medium",
-                melodyA: [0, 2, 4, 2, 4, 6, 4, 2, 0],
-                melodyB: [0, 2, 4, 2, 4, 6, 4, 2, 0]
-            },
-            {
-                name: "相似線條 - 階梯變形",
-                type: "similar",
-                difficulty: "medium",
-                melodyA: [0, 2, 4, 2, 4, 6, 4, 2, 0],
-                melodyB: [0, 2, 4, 3, 4, 6, 4, 2, 0] // 第四個點不同
-            },
-            {
-                name: "不同線條 - 階梯 vs 滑梯",
-                type: "different",
-                difficulty: "medium",
-                melodyA: [0, 2, 4, 2, 4, 6, 4, 2, 0],
-                melodyB: [6, 5, 4, 3, 2, 1, 0, -1, -2] // 向下滑
-            },
-            // 高級關卡
-            {
-                name: "相同線條 - 山峰",
-                type: "same",
-                difficulty: "hard",
-                melodyA: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0],
-                melodyB: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0]
-            },
-            {
-                name: "相似線條 - 山峰變形",
-                type: "similar",
-                difficulty: "hard",
-                melodyA: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0],
-                melodyB: [0, 3, 5, 7, 6, 3, 0, -2, -4, -2, 0] // 第五個點不同
-            },
-            {
-                name: "不同線條 - 山峰 vs 山谷",
-                type: "different",
-                difficulty: "hard",
-                melodyA: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0],
-                melodyB: [0, -3, -5, -7, -5, -3, 0, 2, 4, 2, 0] // 上下翻轉
+        // 從localStorage讀取最高分數
+        function loadHighScore() {
+            const savedHighScore = localStorage.getItem('melodyMountainHighScore');
+            if (savedHighScore) {
+                gameState.highScore = parseInt(savedHighScore);
+                document.getElementById('high-score').textContent = gameState.highScore;
             }
-        ];
+        }
+        
+        // 保存最高分數到localStorage
+        function saveHighScore() {
+            if (gameState.score > gameState.highScore) {
+                gameState.highScore = gameState.score;
+                localStorage.setItem('melodyMountainHighScore', gameState.highScore.toString());
+                document.getElementById('high-score').textContent = gameState.highScore;
+            }
+        }
+        
+        // 旋律數據庫 - 分為三個難度
+        const melodyDatabase = {
+            easy: [
+                // 簡單線條，明顯差異
+                {
+                    name: "相同線條 - 小山丘",
+                    type: "same",
+                    melodyA: [0, 3, 6, 3, 0, -2, 0],
+                    melodyB: [0, 3, 6, 3, 0, -2, 0]
+                },
+                {
+                    name: "相似線條 - 小山丘變形",
+                    type: "similar",
+                    melodyA: [0, 3, 6, 3, 0, -2, 0],
+                    melodyB: [0, 3, 6, 4, 0, -2, 0] // 第四個點不同
+                },
+                {
+                    name: "不同線條 - 小山丘 vs 山谷",
+                    type: "different",
+                    melodyA: [0, 3, 6, 3, 0, -2, 0],
+                    melodyB: [0, -3, -6, -3, 0, 2, 0] // 完全相反
+                },
+                {
+                    name: "相同線條 - 波浪",
+                    type: "same",
+                    melodyA: [0, 4, 0, 4, 0, 4, 0],
+                    melodyB: [0, 4, 0, 4, 0, 4, 0]
+                },
+                {
+                    name: "相似線條 - 波浪變形",
+                    type: "similar",
+                    melodyA: [0, 4, 0, 4, 0, 4, 0],
+                    melodyB: [0, 4, 0, 5, 0, 4, 0] // 第四個點不同
+                },
+                {
+                    name: "不同線條 - 波浪 vs 鋸齒",
+                    type: "different",
+                    melodyA: [0, 4, 0, 4, 0, 4, 0],
+                    melodyB: [0, 4, 2, 4, 2, 4, 0] // 鋸齒形
+                }
+            ],
+            medium: [
+                // 中等難度，更多點，差異較小
+                {
+                    name: "相同線條 - 階梯",
+                    type: "same",
+                    melodyA: [0, 2, 4, 2, 4, 6, 4, 2, 0],
+                    melodyB: [0, 2, 4, 2, 4, 6, 4, 2, 0]
+                },
+                {
+                    name: "相似線條 - 階梯變形",
+                    type: "similar",
+                    melodyA: [0, 2, 4, 2, 4, 6, 4, 2, 0],
+                    melodyB: [0, 2, 4, 3, 4, 6, 4, 2, 0] // 第四個點不同
+                },
+                {
+                    name: "不同線條 - 階梯 vs 滑梯",
+                    type: "different",
+                    melodyA: [0, 2, 4, 2, 4, 6, 4, 2, 0],
+                    melodyB: [6, 5, 4, 3, 2, 1, 0, -1, -2] // 向下滑
+                },
+                {
+                    name: "相同線條 - 雙峰",
+                    type: "same",
+                    melodyA: [0, 2, 4, 2, 0, 2, 4, 2, 0],
+                    melodyB: [0, 2, 4, 2, 0, 2, 4, 2, 0]
+                },
+                {
+                    name: "相似線條 - 雙峰變形",
+                    type: "similar",
+                    melodyA: [0, 2, 4, 2, 0, 2, 4, 2, 0],
+                    melodyB: [0, 2, 4, 2, 0, 3, 4, 2, 0] // 第六個點不同
+                },
+                {
+                    name: "不同線條 - 雙峰 vs 單峰",
+                    type: "different",
+                    melodyA: [0, 2, 4, 2, 0, 2, 4, 2, 0],
+                    melodyB: [0, 3, 6, 3, 0, -2, 0, 0, 0] // 單峰
+                }
+            ],
+            hard: [
+                // 困難難度，複雜線條，細微差異
+                {
+                    name: "相同線條 - 山峰",
+                    type: "same",
+                    melodyA: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0],
+                    melodyB: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0]
+                },
+                {
+                    name: "相似線條 - 山峰變形",
+                    type: "similar",
+                    melodyA: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0],
+                    melodyB: [0, 3, 5, 7, 6, 3, 0, -2, -4, -2, 0] // 第五個點不同
+                },
+                {
+                    name: "不同線條 - 山峰 vs 山谷",
+                    type: "different",
+                    melodyA: [0, 3, 5, 7, 5, 3, 0, -2, -4, -2, 0],
+                    melodyB: [0, -3, -5, -7, -5, -3, 0, 2, 4, 2, 0] // 上下翻轉
+                },
+                {
+                    name: "相同線條 - 複雜波形",
+                    type: "same",
+                    melodyA: [0, 2, 1, 3, 2, 4, 1, 3, 0, 2, -1, 1, 0],
+                    melodyB: [0, 2, 1, 3, 2, 4, 1, 3, 0, 2, -1, 1, 0]
+                },
+                {
+                    name: "相似線條 - 複雜波形變形",
+                    type: "similar",
+                    melodyA: [0, 2, 1, 3, 2, 4, 1, 3, 0, 2, -1, 1, 0],
+                    melodyB: [0, 2, 1, 3, 2, 4, 2, 3, 0, 2, -1, 1, 0] // 第七個點不同
+                },
+                {
+                    name: "不同線條 - 複雜波形 vs 簡單波形",
+                    type: "different",
+                    melodyA: [0, 2, 1, 3, 2, 4, 1, 3, 0, 2, -1, 1, 0],
+                    melodyB: [0, 2, 4, 2, 0, -2, -4, -2, 0, 0, 0, 0, 0] // 簡單波形
+                }
+            ]
+        };
         
         // DOM元素
-        const levelEl = document.getElementById('level');
+        const questionCountEl = document.getElementById('question-count');
         const scoreEl = document.getElementById('score');
+        const highScoreEl = document.getElementById('high-score');
         const streakEl = document.getElementById('streak');
-        const levelNameEl = document.getElementById('level-name');
+        const accuracyEl = document.getElementById('accuracy');
+        const difficultyIndicator = document.getElementById('difficulty-indicator');
         const feedbackEl = document.getElementById('feedback');
         const feedbackText = document.getElementById('feedback-text');
         const resultIcons = document.getElementById('result-icons');
@@ -563,12 +632,14 @@
         
         // 初始化遊戲
         function initGame() {
-            gameState.level = 1;
             gameState.score = 0;
             gameState.streak = 0;
-            gameState.currentQuestion = 0;
+            gameState.totalQuestions = 0;
+            gameState.correctAnswers = 0;
             gameState.gameActive = true;
+            gameState.difficulty = "easy";
             
+            loadHighScore();
             updateUI();
             generateQuestion();
             
@@ -595,30 +666,35 @@
             }
         }
         
+        // 自動調整難度
+        function adjustDifficulty() {
+            const accuracy = gameState.totalQuestions > 0 ? 
+                (gameState.correctAnswers / gameState.totalQuestions) * 100 : 0;
+            
+            if (accuracy >= 80 && gameState.streak >= 5) {
+                gameState.difficulty = "hard";
+                difficultyIndicator.textContent = "難度：困難";
+                difficultyIndicator.style.color = "#e74c3c";
+            } else if (accuracy >= 60 && gameState.streak >= 3) {
+                gameState.difficulty = "medium";
+                difficultyIndicator.textContent = "難度：中等";
+                difficultyIndicator.style.color = "#f39c12";
+            } else {
+                gameState.difficulty = "easy";
+                difficultyIndicator.textContent = "難度：簡單";
+                difficultyIndicator.style.color = "#27ae60";
+            }
+        }
+        
         // 生成新問題
         function generateQuestion() {
-            if (gameState.currentQuestion >= gameState.totalQuestions) {
-                endGame();
-                return;
-            }
+            gameState.totalQuestions++;
             
-            gameState.currentQuestion++;
+            // 調整難度
+            adjustDifficulty();
             
-            // 根據關卡選擇難度
-            let difficulty;
-            if (gameState.level <= 3) {
-                difficulty = "easy";
-                levelNameEl.textContent = "初級關卡";
-            } else if (gameState.level <= 6) {
-                difficulty = "medium";
-                levelNameEl.textContent = "中級關卡";
-            } else {
-                difficulty = "hard";
-                levelNameEl.textContent = "高級關卡";
-            }
-            
-            // 從數據庫中選擇合適的旋律
-            const availableMelodies = melodyDatabase.filter(m => m.difficulty === difficulty);
+            // 從當前難度的數據庫中選擇旋律
+            const availableMelodies = melodyDatabase[gameState.difficulty];
             const randomIndex = Math.floor(Math.random() * availableMelodies.length);
             gameState.currentMelody = availableMelodies[randomIndex];
             gameState.correctAnswer = gameState.currentMelody.type;
@@ -636,8 +712,7 @@
             similarBtn.disabled = false;
             differentBtn.disabled = false;
             
-            // 更新關卡顯示
-            levelEl.textContent = gameState.level;
+            updateUI();
         }
         
         // 繪製旋律線條 - 點加大
@@ -702,7 +777,7 @@
                 ctx.stroke();
                 
                 // 顯示點編號（可選）
-                if (pointCount <= 9) {
+                if (pointCount <= 11) {
                     ctx.fillStyle = '#ffffff';
                     ctx.font = 'bold 12px Arial';
                     ctx.textAlign = 'center';
@@ -750,10 +825,11 @@
             // 檢查答案
             const isCorrect = selectedAnswer === gameState.correctAnswer;
             
-            // 更新分數和連續正確數
+            // 更新統計
             if (isCorrect) {
                 gameState.score += 10;
                 gameState.streak++;
+                gameState.correctAnswers++;
                 
                 // 連續正確獎勵
                 if (gameState.streak >= 3) {
@@ -778,6 +854,9 @@
             }
             
             feedbackEl.classList.remove('hidden');
+            
+            // 保存最高分數
+            saveHighScore();
             updateUI();
             
             // 如果答錯，顯示正確答案的解釋
@@ -785,7 +864,7 @@
                 showAnswerExplanation();
             }
             
-            // 播放音效（可選）
+            // 播放音效
             playSoundEffect(isCorrect);
         }
         
@@ -889,64 +968,27 @@
             
             // 扣分
             gameState.score = Math.max(0, gameState.score - 2);
+            saveHighScore();
             updateUI();
         }
         
         // 下一題
         function nextQuestion() {
             if (!gameState.gameActive) return;
-            
-            // 更新關卡
-            if (gameState.currentQuestion % 3 === 0) {
-                gameState.level++;
-            }
-            
             generateQuestion();
-        }
-        
-        // 結束遊戲
-        function endGame() {
-            gameState.gameActive = false;
-            
-            // 顯示最終分數
-            feedbackText.textContent = `遊戲結束！最終分數：${gameState.score}分`;
-            feedbackEl.className = "feedback correct";
-            feedbackEl.classList.remove('hidden');
-            
-            // 顯示祝賀圖標
-            if (gameState.score >= 80) {
-                resultIcons.innerHTML = '<div class="correct-icon">🎉🏆🎉</div>';
-            } else if (gameState.score >= 60) {
-                resultIcons.innerHTML = '<div class="correct-icon">👍😊👍</div>';
-            } else {
-                resultIcons.innerHTML = '<div class="correct-icon">💪👏💪</div>';
-            }
-            
-            // 禁用答案按鈕
-            sameBtn.disabled = true;
-            similarBtn.disabled = true;
-            differentBtn.disabled = true;
-            
-            // 顯示祝賀訊息
-            setTimeout(() => {
-                let message = "完成所有關卡！\n\n";
-                if (gameState.score >= 80) {
-                    message += "優秀！你是旋律辨識大師！";
-                } else if (gameState.score >= 60) {
-                    message += "良好！繼續努力！";
-                } else {
-                    message += "多加練習會更好！";
-                }
-                
-                alert(message);
-            }, 500);
         }
         
         // 更新UI
         function updateUI() {
+            questionCountEl.textContent = gameState.totalQuestions;
             scoreEl.textContent = gameState.score;
             streakEl.textContent = gameState.streak;
-            levelEl.textContent = gameState.level;
+            highScoreEl.textContent = gameState.highScore;
+            
+            // 計算正確率
+            const accuracy = gameState.totalQuestions > 0 ? 
+                Math.round((gameState.correctAnswers / gameState.totalQuestions) * 100) : 0;
+            accuracyEl.textContent = accuracy;
         }
         
         // 事件監聽
